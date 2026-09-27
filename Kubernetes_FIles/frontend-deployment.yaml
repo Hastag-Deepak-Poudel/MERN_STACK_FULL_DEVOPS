@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 1         # Desired number of concurrent application instances
+  selector:
+    matchLabels:
+      app: frontend      # Tells the deployment which pods belong to it
+  template:
+    metadata:
+      labels:
+        app: frontend    # Labels injected into the pods
+    spec:
+      containers:
+      - name: frontend
+        image: silversoul007/mern:frontend
+        imagePullPolicy: Always # Tag is reused, so always pull the newest build
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend # Labels for created pods
+spec:
+  replicas: 1 # Desired number of concurrent application instances
+  selector:
+    matchLabels:
+      app: backend # Tells the deployment which pods belong to it
+  template:
+    metadata:
+      labels:
+        app: backend # Labels injected into the pods
+    spec:
+      initContainers:
+      - name: wait-for-mongodb
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          echo "waiting for mongodb:27017 to accept connections..."
+          # Bounded at 5 minutes so a genuinely dead MongoDB shows up as a
+          # visible init-container failure instead of hanging silently forever.
+          timeout 300 sh -c 'until nc -z -w 2 mongodb 27017; do sleep 2; done'
+          echo "mongodb:27017 is open, starting backend"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+      containers:
+      - name: backend # Container name
+        image: silversoul007/mern:backend
+        imagePullPolicy: Always # Tag is reused, so always pull the newest build
+        ports:
+        - containerPort: 4000
+        livenessProbe:
+          # Health check to restart if unresponsive
+          httpGet:
+            path: /healthz
+            port: 4000
+          initialDelaySeconds: 30 # Initial waiting period
+          periodSeconds: 10 # Interval between checks
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 4000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: "200m" # MAX CPU allowed
+            memory: "512Mi" # MAX memory allowed
+          requests:
+            cpu: "100m" # MIN guarantee CPU
+            memory: "256Mi" # MIN guarantee Memory
+        env:
+        - name: JWT_SECRET
+          value: "YGvykuiR0te7HPbBt0rESBS2wvZLYQSxl9oLOQLEdtr"
+        - name: MONGODB_URI
+          value: "mongodb://admin:securepassword@mongodb:27017/food_db?authSource=admin"
+        - name: FRONTEND_URL
+          value: "http://frontend"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend # Name of the service
+spec:
+  type: ClusterIP # Only reachable inside the cluster; the Ingress is the single public entry point
+  selector:
+    app: backend # Same name as the deployment of backend
+  ports:
+  - protocol: TCP # TCP protocol is used
+    port: 4000 # Port inside the cluster that is used by container
+    targetPort: 4000 # Port which is accessible to the localmachine outside the cluster

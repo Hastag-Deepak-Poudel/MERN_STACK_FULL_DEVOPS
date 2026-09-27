@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-deployment
+  labels:
+    app: admin
+spec:
+  replicas: 1 # Desired number of concurrent application instances
+  selector:
+    matchLabels:
+      app: admin # Tells the deployment which pods belong to it
+  template:
+    metadata:
+      labels:
+        app: admin # Labels injected into the pods
+    spec:
+      containers:
+      - name: admin
+        image: silversoul007/mern:admin
+        imagePullPolicy: Always # Tag is reused, so always pull the newest build
+        ports:
+        - containerPort: 81
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin
+spec:
+  type: ClusterIP
+  selector:
+    app: admin
+  ports:
+    - protocol: TCP
+      port: 81
+      targetPort: 81

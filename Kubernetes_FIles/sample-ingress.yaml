@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: food-app-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # Deliberately NO nginx.ingress.kubernetes.io/rewrite-target here.
+    # The backend already serves /api/* and /images/* at those exact paths, and the
+    # admin image is built to serve /admin/* at those exact paths, so every path
+    # must be passed through untouched. Adding rewrite-target: / would strip
+    # /api from API calls and /admin from admin assets and break both.
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: localhost
+      http:
+        paths:
+          # Longest-prefix wins, so these three are matched before the catch-all "/".
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 4000
+
+          - path: /images
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 4000
+
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: admin
+                port:
+                  number: 81
+
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
