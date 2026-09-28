@@ -37,6 +37,7 @@ spec:
       - name: backend # Container name
         image: silversoul007/mern:backend
         imagePullPolicy: Always # Tag is reused, so always pull the newest build
+
         ports:
         - containerPort: 4000
         livenessProbe:
@@ -48,6 +49,7 @@ spec:
           periodSeconds: 10 # Interval between checks
           timeoutSeconds: 5
           failureThreshold: 3
+
         readinessProbe:
           httpGet:
             path: /healthz
@@ -56,6 +58,7 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
+
         resources:
           limits:
             cpu: "200m" # MAX CPU allowed
@@ -63,13 +66,33 @@ spec:
           requests:
             cpu: "100m" # MIN guarantee CPU
             memory: "256Mi" # MIN guarantee Memory
+
         env:
-        - name: JWT_SECRET
-          value: "YGvykuiR0te7HPbBt0rESBS2wvZLYQSxl9oLOQLEdtr"
+        # if MONGO_URI is not used, use this,
+        #
+        # - name: MONGO_INITDB_ROOT_USERNAME
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: mongodb-secret
+        #       key: username
+        # - name: MONGO_INITDB_ROOT_PASSWORD
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: mongodb-secret
+        #       key: password
+        # - name: MONGO_INITDB_DATABASE
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: mongodb-secret
+        #       key: db
+        #
         - name: MONGODB_URI
-          value: "mongodb://admin:securepassword@mongodb:27017/food_db?authSource=admin"
-        - name: FRONTEND_URL
-          value: "http://frontend"
+          value: "mongodb://admin:password@mongodb:27017/my-mongo-database?authSource=admin"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: jwtsecret
 ---
 apiVersion: v1
 kind: Service
