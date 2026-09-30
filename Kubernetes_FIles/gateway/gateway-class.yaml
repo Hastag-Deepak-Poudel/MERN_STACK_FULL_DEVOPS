@@ -3,4 +3,4 @@ kind: GatewayClass
 metadata:
   name: my-gateway-class
 spec:
-  controllerName: istio.io/gateway-controller
+  controllerName: traefik.io/gateway-controller

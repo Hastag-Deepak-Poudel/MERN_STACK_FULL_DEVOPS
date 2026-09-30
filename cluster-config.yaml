@@ -14,3 +14,7 @@ nodes:
 - role: worker
 - role: worker
 - role: worker
+
+# Create Cluster 
+# kind create cluster --name my-local-cluster
+
